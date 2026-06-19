@@ -71,6 +71,16 @@ export default function ChatScreen({
   const timerRef = useRef<NodeJS.Timeout | null>(null);
   const recognitionRef = useRef<any>(null);
   const finalTranscriptRef = useRef("");
+  const sessionTranscriptRef = useRef("");
+  const isRecordingRef = useRef(false);
+  const isMobileRef = useRef(false);
+
+  // Detecta dispositivo móvel na montagem
+  useEffect(() => {
+    if (typeof window !== "undefined") {
+      isMobileRef.current = /iPhone|iPad|iPod|Android/i.test(navigator.userAgent);
+    }
+  }, []);
 
   // Detecta suporte a Speech Recognition
   useEffect(() => {
@@ -228,6 +238,37 @@ export default function ChatScreen({
     [accent, autoSpeak]
   );
 // ====== SPEECH RECOGNITION - Reconhecimento de voz real do usuário ======
+
+  // Deduplicação avançada: remove palavras consecutivas E frases/segmentos repetidos
+  const deduplicateTranscript = (text: string): string => {
+    if (!text) return text;
+    const words = text.split(/\s+/).filter(Boolean);
+    if (words.length <= 1) return text;
+
+    // Passo 1: Remove palavras consecutivas idênticas (ex: "hello hello" → "hello")
+    let cleaned: string[] = [words[0]];
+    for (let i = 1; i < words.length; i++) {
+      if (words[i].toLowerCase() !== words[i - 1].toLowerCase()) {
+        cleaned.push(words[i]);
+      }
+    }
+
+    // Passo 2: Detecta frases/segmentos repetidos (ex: "I want to go I want to go" → "I want to go")
+    const len = cleaned.length;
+    for (let phraseLen = Math.floor(len / 2); phraseLen >= 2; phraseLen--) {
+      if (len >= phraseLen * 2) {
+        const lastPhrase = cleaned.slice(len - phraseLen).map(w => w.toLowerCase()).join(" ");
+        const prevPhrase = cleaned.slice(len - phraseLen * 2, len - phraseLen).map(w => w.toLowerCase()).join(" ");
+        if (lastPhrase === prevPhrase) {
+          cleaned = cleaned.slice(0, len - phraseLen);
+          break;
+        }
+      }
+    }
+
+    return cleaned.join(" ");
+  };
+
   const startRecording = useCallback(() => {
     if (typeof window === "undefined") return;
 
@@ -240,49 +281,82 @@ export default function ChatScreen({
     }
 
     // Para a fala do tutor se estiver ativa
-    window.speechSynthesis.cancel();
+    if ("speechSynthesis" in window) window.speechSynthesis.cancel();
     setIsTutorSpeaking(false);
 
+    const isMobile = isMobileRef.current;
+
     const recognition = new SpeechRecognition();
-    recognition.lang = "en-US"; // Reconhece inglês
-    recognition.interimResults = true; // Mostra transcrição parcial em tempo real
-    recognition.continuous = true; // Não para ao final da frase
+    recognition.lang = "en-US";
+    recognition.interimResults = true;
+    // CORREÇÃO PRINCIPAL: No mobile, continuous=true causa reprocessamento de áudio
+    // ao reiniciar, gerando duplicações. Usamos continuous=false no mobile.
+    recognition.continuous = !isMobile;
     recognition.maxAlternatives = 1;
 
     finalTranscriptRef.current = "";
+    sessionTranscriptRef.current = "";
+    isRecordingRef.current = true;
     setLiveTranscript("");
 
     recognition.onresult = (event: SpeechRecognitionEvent) => {
+      let sessionFinal = "";
       let interim = "";
 
-      for (let i = event.resultIndex; i < event.results.length; i++) {
+      // No mobile (continuous=false), processamos TODOS os resultados da sessão atual
+      // No desktop (continuous=true), usamos resultIndex para processar apenas novos
+      const startIdx = isMobile ? 0 : event.resultIndex;
+
+      for (let i = startIdx; i < event.results.length; i++) {
         const result = event.results[i];
         const text = result[0].transcript;
         if (result.isFinal) {
-          finalTranscriptRef.current += text + " ";
+          sessionFinal += text + " ";
         } else {
           interim += text;
         }
       }
 
-      const cleanFinal = finalTranscriptRef.current.replace(/\s+/g, " ").trim();
-      setLiveTranscript(cleanFinal ? cleanFinal + " " + interim : interim);
+      if (isMobile) {
+        // No mobile: a sessão é completa em si mesma, guardamos separadamente
+        sessionTranscriptRef.current = sessionFinal;
+        const fullText = (finalTranscriptRef.current + sessionFinal).replace(/\s+/g, " ").trim();
+        setLiveTranscript(fullText ? fullText + (interim ? " " + interim : "") : interim);
+      } else {
+        // No desktop: acumulamos normalmente
+        if (sessionFinal) {
+          finalTranscriptRef.current += sessionFinal;
+        }
+        const cleanFinal = finalTranscriptRef.current.replace(/\s+/g, " ").trim();
+        setLiveTranscript(cleanFinal ? cleanFinal + (interim ? " " + interim : "") : interim);
+      }
     };
 
     recognition.onerror = (event: SpeechRecognitionErrorEvent) => {
-      console.error("Erro no reconhecimento de voz:", event.error);
-      if (event.error !== "aborted") {
+      console.error("[SpeechRecognition] Erro:", event.error);
+      if (event.error !== "aborted" && event.error !== "no-speech") {
+        isRecordingRef.current = false;
         setIsRecording(false);
       }
     };
 
     recognition.onend = () => {
-      // Quando o reconhecimento termina naturalmente
-      if (isRecording) {
-        // Reinicia automaticamente se ainda estiver gravando
+      // No mobile: acumula o texto da sessão que acabou de terminar
+      if (isMobile && sessionTranscriptRef.current) {
+        finalTranscriptRef.current += sessionTranscriptRef.current;
+        sessionTranscriptRef.current = "";
+      }
+
+      // Reinicia automaticamente se ainda estiver gravando
+      if (isRecordingRef.current) {
         try {
-          recognition.start();
+          setTimeout(() => {
+            if (isRecordingRef.current && recognitionRef.current) {
+              recognitionRef.current.start();
+            }
+          }, isMobile ? 150 : 50); // Pequeno delay no mobile para evitar conflito
         } catch {
+          isRecordingRef.current = false;
           setIsRecording(false);
         }
       }
@@ -295,9 +369,11 @@ export default function ChatScreen({
     } catch (err) {
       console.error("Falha ao iniciar gravação:", err);
     }
-  }, [isRecording]);
+  }, []);
 
   const stopRecordingAndSend = useCallback(() => {
+    isRecordingRef.current = false;
+
     if (recognitionRef.current) {
       recognitionRef.current.onend = null; // Previne reinício automático
       recognitionRef.current.stop();
@@ -306,20 +382,17 @@ export default function ChatScreen({
 
     setIsRecording(false);
 
-    // Usa a transcrição final acumulada, ou a live se a final estiver vazia
+    // Acumula a sessão atual se existir
+    if (sessionTranscriptRef.current) {
+      finalTranscriptRef.current += sessionTranscriptRef.current;
+      sessionTranscriptRef.current = "";
+    }
+
+    // Usa a transcrição final acumulada, ou a live como fallback
     let textToSend = finalTranscriptRef.current.trim() || liveTranscript.trim();
 
-    // Filtro contra palavras consecutivas repetidas (bug do SpeechRecognition em navegadores móveis)
-    if (textToSend) {
-      const words = textToSend.split(/\s+/);
-      const cleanedWords: string[] = [];
-      for (let i = 0; i < words.length; i++) {
-        if (words[i] && (i === 0 || words[i].toLowerCase() !== words[i - 1].toLowerCase())) {
-          cleanedWords.push(words[i]);
-        }
-      }
-      textToSend = cleanedWords.join(" ");
-    }
+    // Aplica deduplicação avançada (palavras e frases repetidas)
+    textToSend = deduplicateTranscript(textToSend);
 
     if (textToSend) {
       handleSendMessage(textToSend, true);
@@ -327,6 +400,7 @@ export default function ChatScreen({
 
     setLiveTranscript("");
     finalTranscriptRef.current = "";
+    sessionTranscriptRef.current = "";
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [liveTranscript]);
 
