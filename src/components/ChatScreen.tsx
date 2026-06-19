@@ -10,6 +10,7 @@ interface ChatScreenProps {
   accent: string;
   onExit: () => void;
   onUpdatePoints: (newPoints: number) => void;
+  audioContextFromParent?: AudioContext | null; // Recebe o contexto de áudio já pré-inicializado no clique
 }
 
 interface Message {
@@ -43,6 +44,7 @@ export default function ChatScreen({
   accent,
   onExit,
   onUpdatePoints,
+  audioContextFromParent,
 }: ChatScreenProps) {
   const tutor = tutorProfiles.find((t) => t.id === tutorId) || tutorProfiles[0];
   const [messages, setMessages] = useState<Message[]>([]);
@@ -76,12 +78,21 @@ export default function ChatScreen({
   const sessionTranscriptRef = useRef("");
   const isRecordingRef = useRef(false);
   const isMobileRef = useRef(false);
-  const sharedAudioCtxRef = useRef<AudioContext | null>(null); // Resolve bloqueio no iOS/Safari
+  const sharedAudioCtxRef = useRef<AudioContext | null>(audioContextFromParent || null); // Resolve bloqueio no iOS/Safari usando contexto pai se fornecido
 
   // Detecta dispositivo móvel na montagem
   useEffect(() => {
     if (typeof window !== "undefined") {
       isMobileRef.current = /iPhone|iPad|iPod|Android/i.test(navigator.userAgent);
+    }
+  }, []);
+
+  // Tenta dar resume no AudioContext na montagem síncrona com o clique do usuário
+  useEffect(() => {
+    if (sharedAudioCtxRef.current && sharedAudioCtxRef.current.state === "suspended") {
+      sharedAudioCtxRef.current.resume().catch((e) => {
+        console.warn("Não foi possível dar resume no AudioContext no mount:", e);
+      });
     }
   }, []);
 
@@ -108,7 +119,7 @@ export default function ChatScreen({
 
     // Gera áudio TTS humanizado via API do Gemini para a mensagem de boas-vindas
     if (autoSpeak) {
-      const generateWelcomeAudio = async () => {
+      const generateWelcomeAudio = async (retries = 2) => {
         try {
           const res = await fetch("/api/tts", {
             method: "POST",
@@ -129,16 +140,27 @@ export default function ChatScreen({
             speakText(tutor.welcomeMessage, data.audioBase64);
             setTtsError(null);
           } else {
-            setTtsError(`TTS Falhou: ${data.error || 'sem áudio'} - ${data.details || ''}`);
-            speakText(tutor.welcomeMessage);
+            if (retries > 0) {
+              console.warn(`Tentando novamente gerar TTS de boas-vindas. Restam ${retries} tentativas...`);
+              setTimeout(() => generateWelcomeAudio(retries - 1), 800);
+            } else {
+              setTtsError(`TTS Falhou: ${data.error || 'sem áudio'} - ${data.details || ''}`);
+              speakText(tutor.welcomeMessage);
+            }
           }
         } catch (err: any) {
           console.error("Erro ao gerar TTS de boas-vindas:", err);
-          setTtsError(`Erro catch TTS welcome: ${err.message}`);
-          speakText(tutor.welcomeMessage);
+          if (retries > 0) {
+            console.warn(`Tentando novamente gerar TTS de boas-vindas após erro. Restam ${retries} tentativas...`);
+            setTimeout(() => generateWelcomeAudio(retries - 1), 800);
+          } else {
+            setTtsError(`Erro catch TTS welcome: ${err.message}`);
+            speakText(tutor.welcomeMessage);
+          }
         }
       };
-      setTimeout(generateWelcomeAudio, 300);
+      // Aumentado ligeiramente o delay para dar tempo ao AudioContext inicializar
+      setTimeout(() => generateWelcomeAudio(2), 500);
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [tutor]);

@@ -56,3 +56,7 @@ export async function POST(request: Request) {
     );
   }
 }
+
+export async function GET() {
+  return NextResponse.json({ status: "ok", message: "TTS API is warmed up" });
+}

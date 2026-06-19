@@ -19,6 +19,7 @@ export default function Home() {
   const [activeAccent, setActiveAccent] = useState<string>("");
   const [theme, setTheme] = useState<string>("midnight");
   const [loading, setLoading] = useState(true);
+  const [sharedAudioCtx, setSharedAudioCtx] = useState<AudioContext | null>(null);
 
   // Aplica o tema ao body quando muda
   useEffect(() => {
@@ -27,6 +28,14 @@ export default function Home() {
       localStorage.setItem("tutor_theme", theme);
     }
   }, [theme]);
+
+  // Warm up das APIs do Gemini no Vercel para evitar cold starts no telemóvel
+  useEffect(() => {
+    if (typeof window !== "undefined") {
+      fetch("/api/tts").catch(() => {});
+      fetch("/api/chat").catch(() => {});
+    }
+  }, []);
 
   // Auto-login e resgate do tema salvo
   useEffect(() => {
@@ -79,6 +88,21 @@ export default function Home() {
     setActiveTutor(tutorId);
     setActiveScenario(scenario);
     setActiveAccent(accent);
+
+    // Inicializa o AudioContext no clique do botão (gesto físico do usuário exigido pelo Safari/iOS)
+    if (typeof window !== "undefined") {
+      try {
+        const AudioContextClass = window.AudioContext || (window as any).webkitAudioContext;
+        const ctx = new AudioContextClass({ sampleRate: 24000 });
+        if (ctx.state === "suspended") {
+          ctx.resume().catch((e) => console.log("Erro ao inicializar AudioContext no clique:", e));
+        }
+        setSharedAudioCtx(ctx);
+      } catch (err) {
+        console.error("Falha ao criar AudioContext no clique:", err);
+      }
+    }
+
     setCurrentScreen("chat");
   };
 
@@ -152,6 +176,7 @@ export default function Home() {
           accent={activeAccent}
           onExit={() => setCurrentScreen("selection")}
           onUpdatePoints={updatePoints}
+          audioContextFromParent={sharedAudioCtx}
         />
       )}
 

@@ -158,7 +158,7 @@ export async function GET(request: Request) {
     const conversationId = searchParams.get("conversationId");
 
     if (!conversationId) {
-      return NextResponse.json({ error: "conversationId é obrigatório" }, { status: 400 });
+      return NextResponse.json({ status: "ok", message: "Chat API is warmed up" });
     }
 
     const messages = await prisma.message.findMany({
