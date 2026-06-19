@@ -11,7 +11,7 @@ function floatTo16BitPCM(input: Float32Array): Int16Array {
 }
 
 // Converte ArrayBuffer para Base64
-function arrayBufferToBase64(buffer: ArrayBuffer): string {
+function arrayBufferToBase64(buffer: ArrayBufferLike): string {
   let binary = "";
   const bytes = new Uint8Array(buffer);
   for (let i = 0; i < bytes.byteLength; i++) {

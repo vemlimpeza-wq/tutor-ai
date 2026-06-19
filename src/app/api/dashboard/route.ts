@@ -66,7 +66,7 @@ export async function GET(request: Request) {
       vocabulary: 0,
     };
 
-    skillsAnalysis.forEach((item) => {
+    skillsAnalysis.forEach((item: any) => {
       const skillName = item.skill as keyof typeof skillsData;
       if (skillsData[skillName] !== undefined) {
         skillsData[skillName] = Math.round(item._avg.score || 0);
