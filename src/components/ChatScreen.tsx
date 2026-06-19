@@ -46,6 +46,8 @@ export default function ChatScreen({
 }: ChatScreenProps) {
   const tutor = tutorProfiles.find((t) => t.id === tutorId) || tutorProfiles[0];
   const [messages, setMessages] = useState<Message[]>([]);
+  const [statusText, setStatusText] = useState("Preparando...");
+  const [ttsError, setTtsError] = useState<string | null>(null); // State para diagnosticar TTS
   const [inputText, setInputText] = useState("");
   const [loading, setLoading] = useState(false);
   const [isRecording, setIsRecording] = useState(false);
@@ -125,12 +127,14 @@ export default function ChatScreen({
               )
             );
             speakText(tutor.welcomeMessage, data.audioBase64);
+            setTtsError(null);
           } else {
-            // Fallback para speechSynthesis se TTS falhar
+            setTtsError(`TTS Falhou: ${data.error || 'sem áudio'} - ${data.details || ''}`);
             speakText(tutor.welcomeMessage);
           }
-        } catch (err) {
+        } catch (err: any) {
           console.error("Erro ao gerar TTS de boas-vindas:", err);
+          setTtsError(`Erro catch TTS welcome: ${err.message}`);
           speakText(tutor.welcomeMessage);
         }
       };
@@ -545,11 +549,13 @@ export default function ChatScreen({
                 )
               );
               speakText(data.tutorMessage.content, ttsData.audioBase64);
+              setTtsError(null);
             } else {
+              setTtsError(`TTS Falhou msg: ${ttsData.error || 'sem áudio'} - ${ttsData.details || ''}`);
               speakText(data.tutorMessage.content); // Fallback
             }
-          } catch (err) {
-            console.error("Erro ao gerar TTS da resposta:", err);
+          } catch (err: any) {
+            setTtsError(`Erro catch TTS msg: ${err.message}`);
             speakText(data.tutorMessage.content);
           }
         };
@@ -660,8 +666,9 @@ export default function ChatScreen({
                 ? "rgba(16, 185, 129, 0.15)"
                 : "rgba(255, 255, 255, 0.03)",
               borderColor: autoSpeak
-                ? "rgba(16, 185, 129, 0.3)"
-                : "rgba(255, 255, 255, 0.08)",
+                ? "rgba(16, 185, 129, 0.4)"
+                : "rgba(255, 255, 255, 0.1)",
+              color: autoSpeak ? "#10B981" : "#A3A3A3",
             }}
             onClick={() => {
               setAutoSpeak(!autoSpeak);
