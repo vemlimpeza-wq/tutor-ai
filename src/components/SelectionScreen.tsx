@@ -152,7 +152,7 @@ export default function SelectionScreen({
                   key={acc}
                   className={`btn ${selectedAccent === acc ? "btn-primary" : "btn-glass"}`}
                   style={{ flex: 1, padding: "8px", fontSize: "0.9rem" }}
-                  onClick={() => setSelectedAccent(acc)}
+                  onClick={() => setSelectedAccent(acc as "American" | "British" | "Australian")}
                 >
                   {acc === "American" && "🇺🇸 "}
                   {acc === "British" && "🇬🇧 "}

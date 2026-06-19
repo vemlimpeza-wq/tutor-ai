@@ -56,7 +56,7 @@ export async function POST(request: Request) {
       take: 15,
     });
 
-    const formattedHistory = historyDb.map((m) => ({
+    const formattedHistory = historyDb.map((m: any) => ({
       role: m.role,
       content: m.content,
     }));

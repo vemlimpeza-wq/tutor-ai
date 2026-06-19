@@ -23,7 +23,7 @@ export default function LiveCallScreen({
 
   // Canvas visualizador
   const canvasRef = useRef<HTMLCanvasElement>(null);
-  const animationRef = useRef<number>();
+  const animationRef = useRef<number | null>(null);
 
   const connectRef = useRef(connect);
   const disconnectRef = useRef(disconnect);
