@@ -74,6 +74,7 @@ export default function ChatScreen({
   const sessionTranscriptRef = useRef("");
   const isRecordingRef = useRef(false);
   const isMobileRef = useRef(false);
+  const sharedAudioCtxRef = useRef<AudioContext | null>(null); // Resolve bloqueio no iOS/Safari
 
   // Detecta dispositivo móvel na montagem
   useEffect(() => {
@@ -164,8 +165,13 @@ export default function ChatScreen({
     if (typeof window === "undefined" || !base64Audio) return;
     try {
       setIsTutorSpeaking(true);
-      const AudioContextClass = window.AudioContext || (window as any).webkitAudioContext;
-      const audioContext = new AudioContextClass({ sampleRate: 24000 });
+      
+      // Usa o contexto compartilhado para evitar bloqueios do iOS/Safari
+      if (!sharedAudioCtxRef.current) {
+        const AudioContextClass = window.AudioContext || (window as any).webkitAudioContext;
+        sharedAudioCtxRef.current = new AudioContextClass({ sampleRate: 24000 });
+      }
+      const audioContext = sharedAudioCtxRef.current;
       
       if (audioContext.state === "suspended") {
         await audioContext.resume();
@@ -197,7 +203,7 @@ export default function ChatScreen({
       
       source.onended = () => {
         setIsTutorSpeaking(false);
-        audioContext.close(); // Fecha o contexto para liberar recursos de hardware no telemóvel
+        // Não fechamos mais o contexto (audioContext.close()) para podermos reaproveitá-lo.
       };
       source.start();
     } catch (err) {
@@ -433,6 +439,15 @@ export default function ChatScreen({
   }, [liveTranscript]);
 
   const handleMicrophoneClick = useCallback(() => {
+    // Desbloqueia áudio no iOS na primeira interação do usuário
+    if (!sharedAudioCtxRef.current && typeof window !== "undefined") {
+      const AudioContextClass = window.AudioContext || (window as any).webkitAudioContext;
+      sharedAudioCtxRef.current = new AudioContextClass({ sampleRate: 24000 });
+    }
+    if (sharedAudioCtxRef.current?.state === "suspended") {
+      sharedAudioCtxRef.current.resume();
+    }
+
     if (!isRecording) {
       startRecording();
     } else {
@@ -442,6 +457,15 @@ export default function ChatScreen({
 
   // ====== ENVIO DE MENSAGEM (texto ou voz) ======
   const handleSendMessage = async (textToSend: string, isVoice: boolean = false) => {
+    // Desbloqueia áudio no iOS na primeira interação do usuário (ao enviar msg)
+    if (!sharedAudioCtxRef.current && typeof window !== "undefined") {
+      const AudioContextClass = window.AudioContext || (window as any).webkitAudioContext;
+      sharedAudioCtxRef.current = new AudioContextClass({ sampleRate: 24000 });
+    }
+    if (sharedAudioCtxRef.current?.state === "suspended") {
+      sharedAudioCtxRef.current.resume();
+    }
+
     if (!textToSend.trim()) return;
 
     const tempUserMsgId = `temp-user-${Date.now()}`;
