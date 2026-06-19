@@ -93,7 +93,7 @@ export default function ChatScreen({
     }
   }, []);
 
-  // Mensagem de boas-vindas inicial
+  // Mensagem de boas-vindas inicial com TTS humanizado do Gemini
   useEffect(() => {
     const welcomeMsg: Message = {
       id: "welcome-msg",
@@ -103,9 +103,37 @@ export default function ChatScreen({
     };
     setMessages([welcomeMsg]);
 
-    // Fala a mensagem de boas-vindas
+    // Gera áudio TTS humanizado via API do Gemini para a mensagem de boas-vindas
     if (autoSpeak) {
-      setTimeout(() => speakText(tutor.welcomeMessage), 500);
+      const generateWelcomeAudio = async () => {
+        try {
+          const res = await fetch("/api/tts", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({
+              text: tutor.welcomeMessage,
+              voiceName: tutor.geminiVoice || "Aoede",
+            }),
+          });
+          const data = await res.json();
+          if (data.audioBase64) {
+            // Atualiza a mensagem de boas-vindas com o áudio e reproduz
+            setMessages((prev) =>
+              prev.map((m) =>
+                m.id === "welcome-msg" ? { ...m, audioBase64: data.audioBase64 } : m
+              )
+            );
+            speakText(tutor.welcomeMessage, data.audioBase64);
+          } else {
+            // Fallback para speechSynthesis se TTS falhar
+            speakText(tutor.welcomeMessage);
+          }
+        } catch (err) {
+          console.error("Erro ao gerar TTS de boas-vindas:", err);
+          speakText(tutor.welcomeMessage);
+        }
+      };
+      setTimeout(generateWelcomeAudio, 300);
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [tutor]);
@@ -545,7 +573,15 @@ export default function ChatScreen({
 
         <div style={styles.tutorInfo}>
           <div style={styles.avatarContainer}>
-            <span style={styles.avatar}>{tutor.avatar}</span>
+            {tutor.imageUrl ? (
+              <img
+                src={tutor.imageUrl}
+                alt={tutor.name}
+                style={styles.avatarImg}
+              />
+            ) : (
+              <span style={styles.avatar}>{tutor.avatar}</span>
+            )}
             {isTutorSpeaking && (
               <div style={styles.speakingIndicator}>
                 <div style={styles.soundWave}></div>
@@ -983,6 +1019,13 @@ const styles: Record<string, React.CSSProperties> = {
   },
   avatar: {
     fontSize: "1.8rem",
+  },
+  avatarImg: {
+    width: "42px",
+    height: "42px",
+    borderRadius: "50%",
+    objectFit: "cover" as const,
+    border: "2px solid rgba(168, 85, 247, 0.3)",
   },
   speakingIndicator: {
     position: "absolute",
