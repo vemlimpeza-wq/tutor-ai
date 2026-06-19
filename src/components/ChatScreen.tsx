@@ -22,6 +22,7 @@ interface Message {
   createdAt: string;
   isVoiceMessage?: boolean;
   translation?: string;
+  audioBase64?: string;
 }
 
 // Tipagem para o SpeechRecognition do navegador
@@ -121,12 +122,16 @@ export default function ChatScreen({
 
   
   // ====== GEMINI AUDIO PLAYER ======
-  const playGeminiAudio = (base64Audio: string) => {
+  const playGeminiAudio = async (base64Audio: string) => {
     if (typeof window === "undefined" || !base64Audio) return;
     try {
       setIsTutorSpeaking(true);
       const AudioContextClass = window.AudioContext || (window as any).webkitAudioContext;
       const audioContext = new AudioContextClass({ sampleRate: 24000 });
+      
+      if (audioContext.state === "suspended") {
+        await audioContext.resume();
+      }
       
       const binaryString = atob(base64Audio);
       const len = binaryString.length;
@@ -144,11 +149,21 @@ export default function ChatScreen({
       
       const source = audioContext.createBufferSource();
       source.buffer = audioBuffer;
-      source.connect(audioContext.destination);
-      source.onended = () => setIsTutorSpeaking(false);
+      
+      // Cria GainNode para amplificar o volume em dispositivos móveis (ganho de 2.2x)
+      const gainNode = audioContext.createGain();
+      gainNode.gain.setValueAtTime(2.2, audioContext.currentTime);
+      
+      source.connect(gainNode);
+      gainNode.connect(audioContext.destination);
+      
+      source.onended = () => {
+        setIsTutorSpeaking(false);
+        audioContext.close(); // Fecha o contexto para liberar recursos de hardware no telemóvel
+      };
       source.start();
     } catch (err) {
-      console.error("Failed to play Gemini Audio:", err);
+      console.error("Erro ao reproduzir áudio do Gemini:", err);
       setIsTutorSpeaking(false);
     }
   };
@@ -176,10 +191,35 @@ export default function ChatScreen({
       utterance.rate = 0.92;
       utterance.pitch = 1.0;
       const voices = window.speechSynthesis.getVoices();
-      const preferredVoice = voices.find(
-        (v) => v.lang.startsWith(utterance.lang.split("-")[0]) && v.lang === utterance.lang
+      
+      // Filtra as vozes correspondentes ao idioma do sotaque (ex: en-US, en-GB, en-AU)
+      let matchedVoices = voices.filter(
+        (v) => v.lang.replace("_", "-").startsWith(utterance.lang)
       );
-      if (preferredVoice) utterance.voice = preferredVoice;
+      
+      // Se não achar por dialeto exato, busca por idioma geral (ex: en)
+      if (matchedVoices.length === 0) {
+        matchedVoices = voices.filter(
+          (v) => v.lang.startsWith(utterance.lang.split("-")[0])
+        );
+      }
+      
+      // Ordena as vozes para priorizar as mais humanas (Google, Natural, Premium, etc.)
+      matchedVoices.sort((a, b) => {
+        const nameA = a.name.toLowerCase();
+        const nameB = b.name.toLowerCase();
+        
+        const isPremiumA = nameA.includes("google") || nameA.includes("natural") || nameA.includes("premium") || nameA.includes("guy") || nameA.includes("aria");
+        const isPremiumB = nameB.includes("google") || nameB.includes("natural") || nameB.includes("premium") || nameB.includes("guy") || nameB.includes("aria");
+        
+        if (isPremiumA && !isPremiumB) return -1;
+        if (!isPremiumA && isPremiumB) return 1;
+        return 0;
+      });
+      
+      if (matchedVoices.length > 0) {
+        utterance.voice = matchedVoices[0];
+      }
       utterance.onstart = () => setIsTutorSpeaking(true);
       utterance.onend = () => setIsTutorSpeaking(false);
       utterance.onerror = () => setIsTutorSpeaking(false);
@@ -214,19 +254,19 @@ export default function ChatScreen({
 
     recognition.onresult = (event: SpeechRecognitionEvent) => {
       let interim = "";
-      let finalText = "";
 
-      for (let i = 0; i < event.results.length; i++) {
+      for (let i = event.resultIndex; i < event.results.length; i++) {
         const result = event.results[i];
+        const text = result[0].transcript;
         if (result.isFinal) {
-          finalText += result[0].transcript;
+          finalTranscriptRef.current += text + " ";
         } else {
-          interim += result[0].transcript;
+          interim += text;
         }
       }
 
-      finalTranscriptRef.current = finalText;
-      setLiveTranscript(finalText + interim);
+      const cleanFinal = finalTranscriptRef.current.replace(/\s+/g, " ").trim();
+      setLiveTranscript(cleanFinal ? cleanFinal + " " + interim : interim);
     };
 
     recognition.onerror = (event: SpeechRecognitionErrorEvent) => {
@@ -267,7 +307,19 @@ export default function ChatScreen({
     setIsRecording(false);
 
     // Usa a transcrição final acumulada, ou a live se a final estiver vazia
-    const textToSend = finalTranscriptRef.current.trim() || liveTranscript.trim();
+    let textToSend = finalTranscriptRef.current.trim() || liveTranscript.trim();
+
+    // Filtro contra palavras consecutivas repetidas (bug do SpeechRecognition em navegadores móveis)
+    if (textToSend) {
+      const words = textToSend.split(/\s+/);
+      const cleanedWords: string[] = [];
+      for (let i = 0; i < words.length; i++) {
+        if (words[i] && (i === 0 || words[i].toLowerCase() !== words[i - 1].toLowerCase())) {
+          cleanedWords.push(words[i]);
+        }
+      }
+      textToSend = cleanedWords.join(" ");
+    }
 
     if (textToSend) {
       handleSendMessage(textToSend, true);
@@ -326,6 +378,7 @@ export default function ChatScreen({
         content: data.tutorMessage.content,
         createdAt: data.tutorMessage.createdAt,
         translation: data.tutorMessage.translation,
+        audioBase64: data.audioBase64,
       };
 
       setMessages((prev) =>
@@ -347,7 +400,7 @@ export default function ChatScreen({
 
       // O tutor fala a resposta em voz alta
       if (autoSpeak) {
-        speakText(data.tutorMessage.content);
+        speakText(data.tutorMessage.content, data.audioBase64);
       }
     } catch (error) {
       console.error(error);
@@ -501,7 +554,7 @@ export default function ChatScreen({
                       {tutor.name}
                       <button
                         style={styles.replayBtn}
-                        onClick={() => speakText(msg.content)}
+                        onClick={() => speakText(msg.content, msg.audioBase64)}
                         title="Ouvir novamente"
                       >
                         🔊

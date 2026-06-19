@@ -80,7 +80,14 @@ export function useLiveAudio() {
 
     const source = ctx.createBufferSource();
     source.buffer = audioBuffer;
-    source.connect(ctx.destination);
+    
+    // Cria GainNode para amplificar o volume em dispositivos móveis (ganho de 2.2x)
+    const gainNode = ctx.createGain();
+    gainNode.gain.setValueAtTime(2.2, ctx.currentTime);
+    
+    source.connect(gainNode);
+    gainNode.connect(ctx.destination);
+
     source.onended = () => {
       if (audioQueueRef.current.length > 0) {
         playAudioQueue();
