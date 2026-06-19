@@ -225,30 +225,10 @@ You MUST return your response STRICTLY as a JSON object matching this schema:
       const textResponse = parsed.response || "Sorry, I didn't understand that.";
       const translationText = parsed.translation || "";
 
-      // STEP 2: Generate TTS Audio for the natural voice
+      // STEP 2: Generate TTS Audio for the natural voice (REMOVIDO)
+      // Para evitar lentidão na resposta do chat, o frontend agora gera o áudio
+      // de forma assíncrona chamando a rota /api/tts.
       let audioBase64 = undefined;
-      try {
-        const audioResult = await ai.models.generateContent({
-          model: 'gemini-3.1-flash-tts-preview',
-          contents: textResponse,
-          config: {
-            speechConfig: {
-              voiceConfig: {
-                prebuiltVoiceConfig: {
-                  voiceName: tutor.geminiVoice || "Aoede",
-                }
-              }
-            }
-          }
-        });
-        
-        const audioPart = audioResult.candidates?.[0]?.content?.parts?.find(p => p.inlineData);
-        if (audioPart && audioPart.inlineData) {
-           audioBase64 = audioPart.inlineData.data;
-        }
-      } catch(audioErr) {
-        console.error("Failed to generate TTS audio:", audioErr);
-      }
 
       return {
         response: textResponse,

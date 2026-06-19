@@ -500,9 +500,36 @@ export default function ChatScreen({
 
       onUpdatePoints(data.userPoints);
 
-      // O tutor fala a resposta em voz alta
+      // O tutor fala a resposta em voz alta (carregamento assíncrono do áudio)
       if (autoSpeak) {
-        speakText(data.tutorMessage.content, data.audioBase64);
+        const generateResponseAudio = async () => {
+          try {
+            const res = await fetch("/api/tts", {
+              method: "POST",
+              headers: { "Content-Type": "application/json" },
+              body: JSON.stringify({
+                text: data.tutorMessage.content,
+                voiceName: tutor.geminiVoice || "Aoede",
+              }),
+            });
+            const ttsData = await res.json();
+            if (ttsData.audioBase64) {
+              // Atualiza a mensagem na tela para incluir o botão de replay em áudio de alta qualidade
+              setMessages((prev) =>
+                prev.map((m) =>
+                  m.id === data.tutorMessage.id ? { ...m, audioBase64: ttsData.audioBase64 } : m
+                )
+              );
+              speakText(data.tutorMessage.content, ttsData.audioBase64);
+            } else {
+              speakText(data.tutorMessage.content); // Fallback
+            }
+          } catch (err) {
+            console.error("Erro ao gerar TTS da resposta:", err);
+            speakText(data.tutorMessage.content);
+          }
+        };
+        generateResponseAudio();
       }
     } catch (error) {
       console.error(error);
