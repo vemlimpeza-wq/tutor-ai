@@ -73,17 +73,17 @@ export default function SelectionScreen({
   };
 
   return (
-    <div style={styles.container}>
+    <div className="selection-container" style={styles.container}>
       {/* Menu Superior Premium */}
-      <div className="glass-panel" style={styles.navBar}>
-        <div style={styles.navLogo}>
+      <div className="glass-panel selection-navbar" style={styles.navBar}>
+        <div className="selection-nav-logo" style={styles.navLogo}>
           <span style={styles.navEmoji}>🔮</span>
           <div>
             <h2 style={styles.navTitle}>Tutor de Inglês IA</h2>
             <span style={styles.navLevelBadge}>CEFR: {user?.cefrLevel}</span>
           </div>
         </div>
-        <div style={styles.navStats}>
+        <div className="selection-nav-stats" style={styles.navStats}>
           <div style={styles.statItem}>
             <span style={styles.statLabel}>Pontos:</span>
             <span style={styles.statValue}>🔥 {user?.points} XP</span>
@@ -93,7 +93,7 @@ export default function SelectionScreen({
             <span style={styles.statValue}>⚡ {user?.streakDays} dias</span>
           </div>
         </div>
-        <div style={styles.navMenu}>
+        <div className="selection-nav-menu" style={styles.navMenu}>
           <button className="btn btn-glass" style={styles.navBtn} onClick={onNavigateToDashboard}>
             📈 Dashboard
           </button>
@@ -103,7 +103,7 @@ export default function SelectionScreen({
         </div>
       </div>
 
-      <div style={styles.contentLayout}>
+      <div className="selection-content-layout" style={styles.contentLayout}>
         {/* Lado Esquerdo: Tutores de IA */}
         <div style={styles.leftCol}>
           <h2 style={styles.sectionTitle}>1. Escolha seu Professor Virtual</h2>
@@ -167,7 +167,7 @@ export default function SelectionScreen({
         {/* Lado Direito: Cenários */}
         <div style={styles.rightCol}>
           <h2 style={styles.sectionTitle}>2. Escolha o Cenário da Prática</h2>
-          <div style={styles.scenarioGrid}>
+          <div className="selection-scenario-grid" style={styles.scenarioGrid}>
             {scenarios.map((scen) => {
               const isSelected = selectedScenario === scen.id;
               return (
@@ -189,14 +189,14 @@ export default function SelectionScreen({
           </div>
 
           {/* Chamada para Ação */}
-          <div className="glass-panel" style={styles.actionCard}>
+          <div className="glass-panel selection-action-card" style={styles.actionCard}>
             <div style={styles.actionDetails}>
               <h4>Você vai falar com: <strong style={{ color: "var(--color-primary-light)" }}>{activeTutorObj.name}</strong></h4>
               <p>No cenário de: <strong style={{ color: "var(--color-secondary-light)" }}>
                 {scenarios.find((s) => s.id === selectedScenario)?.name}
               </strong></p>
             </div>
-            <div style={{ display: "flex", gap: "10px", width: "100%" }}>
+            <div className="selection-action-buttons" style={{ display: "flex", gap: "10px" }}>
               <button className="btn btn-secondary" style={{ ...styles.startBtn, flex: 1 }} onClick={handleStart}>
                 💬 Chat Texto & Áudio
               </button>
@@ -232,7 +232,7 @@ export default function SelectionScreen({
               Personalize a aparência do seu tutor com nossos temas cinematográficos premium.
             </p>
             
-            <div style={styles.themesGrid}>
+            <div className="selection-themes-grid" style={styles.themesGrid}>
               {themeOptions.map((opt) => (
                 <div 
                   key={opt.id} 

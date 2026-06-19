@@ -58,7 +58,7 @@ export default function LevelTestScreen({ userId, onTestComplete }: LevelTestScr
   if (finished) {
     return (
       <div style={styles.container}>
-        <div className="glass-panel" style={styles.card}>
+        <div className="glass-panel level-test-card" style={styles.card}>
           {loading ? (
             <div style={styles.loadingSection}>
               <div className="voice-pulse" style={styles.spinner}>🧠</div>
@@ -99,8 +99,8 @@ export default function LevelTestScreen({ userId, onTestComplete }: LevelTestScr
 
   return (
     <div style={styles.container}>
-      <div className="glass-panel" style={styles.card}>
-        <div style={styles.header}>
+      <div className="glass-panel level-test-card" style={styles.card}>
+        <div className="level-test-header" style={styles.header}>
           <span style={styles.testBadge}>Teste de Nivelamento CEFR</span>
           <span style={styles.progressCounter}>
             Questão {currentIdx + 1} de {cefrQuestions.length}

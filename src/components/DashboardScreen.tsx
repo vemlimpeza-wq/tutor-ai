@@ -96,9 +96,9 @@ export default function DashboardScreen({ user, onExit }: DashboardScreenProps) 
   const nextLevelInfo = data ? getNextLevelInfo(data.user.cefrLevel, data.user.points) : null;
 
   return (
-    <div style={styles.container}>
+    <div className="dashboard-container" style={styles.container}>
       {/* Header */}
-      <div className="glass-panel" style={styles.header}>
+      <div className="glass-panel dashboard-header" style={styles.header}>
         <button className="btn btn-glass" style={styles.backBtn} onClick={onExit}>
           ⬅ Voltar ao Seletor
         </button>
@@ -123,7 +123,7 @@ export default function DashboardScreen({ user, onExit }: DashboardScreenProps) 
                 <span style={styles.levelBadge}>Nível CEFR: {data.user.cefrLevel}</span>
               </div>
             </div>
-            <div style={styles.metricsRow}>
+            <div className="dashboard-metrics-row" style={styles.metricsRow}>
               <div style={styles.metricItem}>
                 <span style={styles.metricLabel}>🔥 Total de XP</span>
                 <span style={styles.metricVal}>{data.user.points} XP</span>

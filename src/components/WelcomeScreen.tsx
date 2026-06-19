@@ -46,7 +46,7 @@ export default function WelcomeScreen({ onLoginSuccess }: WelcomeScreenProps) {
 
   return (
     <div style={styles.container}>
-      <div className="glass-panel" style={styles.card}>
+      <div className="glass-panel welcome-card" style={styles.card}>
         <div style={styles.logoSection}>
           <span style={styles.emoji}>🔮</span>
           <h1 style={styles.title}>Tutor de Inglês com IA</h1>

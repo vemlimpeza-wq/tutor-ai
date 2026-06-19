@@ -296,3 +296,204 @@ h1, h2, h3, h4, h5, h6 {
 ::-webkit-scrollbar-thumb:hover {
   background: rgba(255, 255, 255, 0.2);
 }
+
+/* ========================================================================= */
+/* RESPONSIVIDADE E ADAPTAÇÃO PARA CELULARES (TELEMÓVEIS)                     */
+/* ========================================================================= */
+
+@media (max-width: 768px) {
+  /* 1. Tela de Login (WelcomeScreen) */
+  .welcome-card {
+    padding: 24px 20px !important;
+  }
+  
+  /* 2. Seletor de Tutores/Cenários (SelectionScreen) */
+  .selection-container {
+    padding: 15px 10px !important;
+    gap: 20px !important;
+  }
+  .selection-navbar {
+    flex-direction: column !important;
+    align-items: stretch !important;
+    gap: 15px !important;
+    padding: 15px !important;
+    text-align: center;
+  }
+  .selection-nav-logo {
+    justify-content: center !important;
+  }
+  .selection-nav-stats {
+    justify-content: center !important;
+    gap: 24px !important;
+    border-top: 1px solid rgba(255, 255, 255, 0.05);
+    border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+    padding: 10px 0 !important;
+  }
+  .selection-nav-menu {
+    justify-content: center !important;
+    width: 100% !important;
+  }
+  .selection-nav-menu .btn {
+    flex: 1 !important;
+    font-size: 0.8rem !important;
+    padding: 8px 12px !important;
+  }
+  .selection-content-layout {
+    grid-template-columns: 1fr !important;
+    gap: 24px !important;
+  }
+  
+  /* 3. Teste de Nivelamento (LevelTestScreen) */
+  .level-test-card {
+    padding: 20px !important;
+  }
+  .level-test-header {
+    flex-direction: column !important;
+    gap: 8px !important;
+    align-items: flex-start !important;
+  }
+  
+  /* 4. Chat (ChatScreen) */
+  .chat-container {
+    height: 100dvh !important;
+    padding: 10px 5px !important;
+    gap: 10px !important;
+  }
+  .chat-header {
+    padding: 8px 12px !important;
+    gap: 6px !important;
+  }
+  .chat-area {
+    padding: 10px !important;
+  }
+  .chat-bubble-override {
+    max-width: 92% !important;
+  }
+  .chat-input-form {
+    gap: 8px !important;
+  }
+  .chat-input-form input {
+    padding: 12px 14px !important;
+    font-size: 0.9rem !important;
+  }
+  .chat-input-form button {
+    padding: 0 16px !important;
+    font-size: 0.9rem !important;
+  }
+  
+  /* 5. Chamada de Voz (LiveCallScreen) */
+  .live-call-header {
+    position: relative !important;
+    top: 0 !important;
+    left: 0 !important;
+    right: 0 !important;
+    width: 100% !important;
+    padding: 15px 20px !important;
+    flex-direction: row !important;
+    justify-content: space-between !important;
+  }
+  .live-call-container {
+    justify-content: flex-start !important;
+    height: 100dvh !important;
+    overflow-y: auto !important;
+  }
+  .live-call-card {
+    padding: 24px 20px !important;
+    width: 92% !important;
+    margin-top: 10px !important;
+    margin-bottom: 20px !important;
+  }
+  
+  /* 6. Dashboard */
+  .dashboard-container {
+    padding: 15px 10px !important;
+  }
+  .dashboard-header {
+    flex-direction: column !important;
+    padding: 15px !important;
+    gap: 12px !important;
+    text-align: center;
+  }
+  .dashboard-metrics-row {
+    grid-template-columns: 1fr !important;
+    gap: 12px !important;
+    text-align: center;
+  }
+  .dashboard-metrics-row > div {
+    border-bottom: 1px solid rgba(255,255,255,0.05);
+    padding-bottom: 8px;
+  }
+  .dashboard-metrics-row > div:last-child {
+    border-bottom: none;
+    padding-bottom: 0;
+  }
+  
+  /* 7. Flashcards */
+  .flashcard-container {
+    padding: 15px 10px !important;
+  }
+  .flashcard-header {
+    flex-direction: column !important;
+    padding: 15px !important;
+    gap: 12px !important;
+    text-align: center;
+  }
+}
+
+@media (max-width: 480px) {
+  /* Ajustes extras para celulares pequenos */
+  h1 {
+    font-size: 1.5rem !important;
+  }
+  h2 {
+    font-size: 1.2rem !important;
+  }
+  
+  /* Grid de cenários de 1 coluna em celulares muito pequenos */
+  .selection-scenario-grid {
+    grid-template-columns: 1fr !important;
+    gap: 12px !important;
+  }
+  
+  /* Grid de temas do modal */
+  .selection-themes-grid {
+    grid-template-columns: 1fr !important;
+    gap: 12px !important;
+  }
+  
+  /* Avaliação de Flashcards em coluna */
+  .flashcard-rating-grid {
+    grid-template-columns: 1fr !important;
+    gap: 10px !important;
+  }
+  .flashcard-card {
+    padding: 20px 15px !important;
+    min-height: 220px !important;
+  }
+  .flashcard-card h2 {
+    font-size: 1.8rem !important;
+  }
+  
+  .chat-recording-overlay {
+    padding: 15px 10px !important;
+    gap: 10px !important;
+  }
+  
+  /* Botões empilhados nos cards de rodapé do seletor */
+  .selection-action-buttons {
+    flex-direction: column !important;
+    width: 100% !important;
+    gap: 10px !important;
+  }
+  .selection-action-buttons button {
+    width: 100% !important;
+    margin: 0 !important;
+  }
+  
+  .selection-action-card {
+    flex-direction: column !important;
+    align-items: stretch !important;
+    gap: 15px !important;
+    text-align: center;
+  }
+}

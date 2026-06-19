@@ -147,9 +147,9 @@ export default function FlashcardScreen({
   const activeCard = flashcards[currentIdx];
 
   return (
-    <div style={styles.container}>
+    <div className="flashcard-container" style={styles.container}>
       {/* Header */}
-      <div className="glass-panel" style={styles.header}>
+      <div className="glass-panel flashcard-header" style={styles.header}>
         <button className="btn btn-glass" style={styles.backBtn} onClick={onExit}>
           ⬅ Voltar ao Seletor
         </button>
@@ -247,7 +247,7 @@ export default function FlashcardScreen({
 
               {/* Flashcard Físico 3D */}
               <div
-                className="glass-panel"
+                className="glass-panel flashcard-card"
                 style={{
                   ...styles.flashcard,
                   borderColor: showAnswer ? "var(--color-primary-light)" : "var(--border-glass)",
@@ -294,7 +294,7 @@ export default function FlashcardScreen({
               {showAnswer && (
                 <div className="glass-panel animate-fadeIn" style={styles.feedbackPanel}>
                   <p style={styles.feedbackIntro}>O quão fácil foi lembrar desta palavra?</p>
-                  <div style={styles.ratingGrid}>
+                  <div className="flashcard-rating-grid" style={styles.ratingGrid}>
                     <button
                       className="btn btn-glass"
                       style={{ ...styles.ratingBtn, background: "rgba(239, 68, 68, 0.1)" }}

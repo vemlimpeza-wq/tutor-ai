@@ -113,8 +113,8 @@ Keep your responses short, natural, and conversational.`;
   }, [isConnected, isTutorSpeaking]);
 
   return (
-    <div style={styles.container}>
-      <div style={styles.header}>
+    <div className="live-call-container" style={styles.container}>
+      <div className="live-call-header" style={styles.header}>
         <button className="btn btn-glass" onClick={onExit} style={styles.btnBack}>
           ⬅ Voltar
         </button>
@@ -123,7 +123,7 @@ Keep your responses short, natural, and conversational.`;
         </div>
       </div>
 
-      <div style={styles.callCard}>
+      <div className="glass-panel live-call-card" style={styles.callCard}>
         {error ? (
           <div style={styles.errorBox}>
             <p>⚠️ {error}</p>

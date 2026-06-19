@@ -409,9 +409,9 @@ export default function ChatScreen({
   };
 
   return (
-    <div style={styles.container}>
+    <div className="chat-container" style={styles.container}>
       {/* Header do Chat */}
-      <div className="glass-panel" style={styles.header}>
+      <div className="glass-panel chat-header" style={styles.header}>
         <button className="btn btn-glass" style={styles.backBtn} onClick={onExit}>
           ⬅ Voltar
         </button>
@@ -476,12 +476,12 @@ export default function ChatScreen({
       </div>
 
       {/* Área de Mensagens */}
-      <div className="glass-panel" style={styles.chatArea}>
+      <div className="glass-panel chat-area" style={styles.chatArea}>
         <div style={styles.messageList}>
           {messages.map((msg) => (
             <div
               key={msg.id}
-              className={`message-bubble ${
+              className={`message-bubble chat-bubble-override ${
                 msg.role === "user" ? "message-user" : "message-assistant"
               }`}
               style={{
@@ -607,7 +607,7 @@ export default function ChatScreen({
       <div className="glass-panel" style={styles.inputArea}>
         {/* Overlay de gravação de voz REAL */}
         {isRecording && (
-          <div style={styles.recordingOverlay}>
+          <div className="chat-recording-overlay" style={styles.recordingOverlay}>
             <div style={styles.recordingLeft}>
               <div style={styles.pulseRing}>
                 <div className="voice-pulse" style={styles.pulseCore}>🎙️</div>
@@ -654,6 +654,7 @@ export default function ChatScreen({
             e.preventDefault();
             handleSendMessage(inputText, false);
           }}
+          className="chat-input-form"
           style={styles.inputForm}
         >
           <button
